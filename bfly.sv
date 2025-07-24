@@ -55,7 +55,7 @@ module bfly #(
             count <= count + 1;
     end
 
-    // 출력 계산 (SUM / DIFF) - 명시적 sign 확장 적용
+    // 출력 계산 (SUM / DIFF) - signed로 부호 확장
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
             bfly_out_re <= 0;
