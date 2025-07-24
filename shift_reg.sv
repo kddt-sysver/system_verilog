@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
 
 module shift_reg #(
-    parameter int DATA_WIDTH = 9,     // 입력 데이터 포맷 예: <3.6>
-    parameter int MEM_DEPTH  = 128    // 저장소 깊이: 256, 128, 64 등
+    parameter int DATA_WIDTH = 9,     // 예: <3.6>
+    parameter int MEM_DEPTH  = 128    // step0_0=256, step0_1=128, step0_2=64 ...
 ) (
     input  logic clk,
     input  logic rstn,
@@ -16,44 +16,40 @@ module shift_reg #(
     output logic                         bfly_valid
 );
 
-    localparam int TOTAL_INPUTS = 512;
+    localparam int TOTAL_INPUTS   = 512;
+    localparam int PHASE_LENGTH   = MEM_DEPTH / 16;  // 몇 클럭마다 phase 전환할지
 
     // 내부 메모리
     logic signed [DATA_WIDTH-1:0] shift_mem_re[0:MEM_DEPTH-1];
     logic signed [DATA_WIDTH-1:0] shift_mem_im[0:MEM_DEPTH-1];
 
-    // 입력 개수 카운트
-    logic [$clog2(TOTAL_INPUTS + 1) - 1:0] input_count;
+    // 내부 상태
+    logic [$clog2(TOTAL_INPUTS+1)-1:0] input_count;
+    logic [$clog2(PHASE_LENGTH)-1:0]   phase_count;
+    logic                              phase_select;
 
-    // 저장/출력 phase 제어 (0: 저장만, 1: 출력+저장)
-    logic phase_select;
+    // bfly_valid 출력
+    assign bfly_valid = (phase_select == 1) && valid;
 
-    // 카운터 인스턴스
-    counter #(
-        .WIDTH($clog2(MEM_DEPTH + 1))
-    ) u_counter (
-        .clk(clk),
-        .rstn(rstn),
-        .en(valid),
-        .count_out(count)
-    );
-
-    // phase_select 제어: MEM_DEPTH 클럭마다 toggle
+    // phase_count 및 phase_select FSM
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
             input_count  <= 0;
-            phase_select <= 1;
+            phase_count  <= 0;
+            phase_select <= 0;
         end else if (valid && input_count < TOTAL_INPUTS) begin
             input_count <= input_count + 16;
-            if (!(count % (MEM_DEPTH / 16)))
+
+            if (phase_count == PHASE_LENGTH - 1) begin
+                phase_count  <= 0;
                 phase_select <= ~phase_select;
+            end else begin
+                phase_count <= phase_count + 1;
+            end
         end
     end
 
-    // butterfly valid: 출력 phase + valid 시점
-    assign bfly_valid = (phase_select == 1) && valid;
-
-    // 쉬프트 레지스터 동작
+    // 쉬프트 연산
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
             for (int i = 0; i < MEM_DEPTH; i++) begin
@@ -72,7 +68,7 @@ module shift_reg #(
         end
     end
 
-    // 출력: 가장 오래된 16개를 고정된 위치에서 뽑아줌
+    // 출력: shift된 가장 오래된 16개
     generate
         genvar k;
         for (k = 0; k < 16; k++) begin
