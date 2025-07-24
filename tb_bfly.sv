@@ -102,7 +102,7 @@ module tb_bfly;
       end
       bfly_valid = 1;
     end
-
+    #10;
     // === [5] 마무리 ===
     bfly_valid = 0;
     repeat (5) @(posedge clk);
