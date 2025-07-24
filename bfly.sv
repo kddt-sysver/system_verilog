@@ -2,7 +2,7 @@
 
 module bfly #(
     parameter WIDTH = 12,
-    parameter NUM_PAIR = 8
+    parameter NUM_PAIR = 16 // 16, 8, 4, 2
 )(
     input  logic clk,
     input  logic rstn,
