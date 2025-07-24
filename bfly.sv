@@ -9,15 +9,15 @@ module bfly #(
 
     input  logic bfly_valid,
 
-    input  logic signed [WIDTH-1:0] din_re,
-    input  logic signed [WIDTH-1:0] din_im,
-    input  logic signed [WIDTH-1:0] shift_data_re,
-    input  logic signed [WIDTH-1:0] shift_data_im,
+    input  logic signed [WIDTH-1:0] din_re [0:NUM_PAIR-1],
+    input  logic signed [WIDTH-1:0] din_im [0:NUM_PAIR-1],
+    input  logic signed [WIDTH-1:0] shift_data_re [0:NUM_PAIR-1],
+    input  logic signed [WIDTH-1:0] shift_data_im [0:NUM_PAIR-1],
 
-    output logic signed [WIDTH:0] bfly_sum_re,
-    output logic signed [WIDTH:0] bfly_sum_im,
-    output logic signed [WIDTH:0] bfly_diff_re,
-    output logic signed [WIDTH:0] bfly_diff_im,
+    output logic signed [WIDTH:0] bfly_sum_re [0:NUM_PAIR-1],
+    output logic signed [WIDTH:0] bfly_sum_im [0:NUM_PAIR-1],
+    output logic signed [WIDTH:0] bfly_diff_re [0:NUM_PAIR-1],
+    output logic signed [WIDTH:0] bfly_diff_im [0:NUM_PAIR-1],
 
     output logic twiddle_valid
 );
@@ -61,28 +61,40 @@ module bfly #(
     // SUM 연산 결과
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
-            bfly_sum_re <= 0;
-            bfly_sum_im <= 0;
+            for (int i = 0; i < NUM_PAIR; i++) begin
+                bfly_sum_re[i] <= 0;
+                bfly_sum_im[i] <= 0;
+            end
         end else if (state == SUM && bfly_valid) begin
-            bfly_sum_re <= $signed(shift_data_re) + $signed(din_re);
-            bfly_sum_im <= $signed(shift_data_im) + $signed(din_im);
+            for (int i = 0; i < NUM_PAIR; i++) begin
+                bfly_sum_re[i] <= $signed(shift_data_re[i]) + $signed(din_re[i]);
+                bfly_sum_im[i] <= $signed(shift_data_im[i]) + $signed(din_im[i]);
+            end
         end else begin
-            bfly_sum_re <= 0;
-            bfly_sum_im <= 0;
+            for (int i = 0; i < NUM_PAIR; i++) begin
+                bfly_sum_re[i] <= 0;
+                bfly_sum_im[i] <= 0;
+            end
         end
     end
     
     // DIFF 연산 결과
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
-            bfly_diff_re <= 0;
-            bfly_diff_im <= 0;
+            for (int i = 0; i < NUM_PAIR; i++) begin
+                bfly_diff_re[i] <= 0;
+                bfly_diff_im[i] <= 0;
+            end
         end else if (state == DIFF && bfly_valid) begin
-            bfly_diff_re <= $signed(shift_data_re) - $signed(din_re);
-            bfly_diff_im <= $signed(shift_data_im) - $signed(din_im);
+            for (int i = 0; i < NUM_PAIR; i++) begin
+                bfly_diff_re[i] <= $signed(shift_data_re[i]) - $signed(din_re[i]);
+                bfly_diff_im[i] <= $signed(shift_data_im[i]) - $signed(din_im[i]);
+            end
         end else begin
-            bfly_diff_re <= 0;
-            bfly_diff_im <= 0;
+            for (int i = 0; i < NUM_PAIR; i++) begin
+                bfly_diff_re[i] <= 0;
+                bfly_diff_im[i] <= 0;
+            end
         end
     end
 
