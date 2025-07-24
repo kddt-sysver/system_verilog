@@ -10,7 +10,8 @@ module tb_bfly;
   logic bfly_valid;
   logic signed [WIDTH-1:0] din_re, din_im;
   logic signed [WIDTH-1:0] shift_data_re, shift_data_im;
-  logic signed [WIDTH:0] bfly_out_re, bfly_out_im;
+  logic signed [WIDTH:0] bfly_sum_re, bfly_sum_im;
+  logic signed [WIDTH:0] bfly_diff_re, bfly_diff_im;
   logic twiddle_valid;
 
   // DUT
@@ -25,8 +26,10 @@ module tb_bfly;
     .din_im(din_im),
     .shift_data_re(shift_data_re),
     .shift_data_im(shift_data_im),
-    .bfly_out_re(bfly_out_re),
-    .bfly_out_im(bfly_out_im),
+    .bfly_sum_re(bfly_sum_re),
+    .bfly_sum_im(bfly_sum_im),
+    .bfly_diff_re(bfly_diff_re),
+    .bfly_diff_im(bfly_diff_im),
     .twiddle_valid(twiddle_valid)
   );
 
@@ -107,7 +110,8 @@ module tb_bfly;
   logic bfly_valid;
   logic signed [WIDTH-1:0] din_re, din_im;
   logic signed [WIDTH-1:0] shift_data_re, shift_data_im;
-  logic signed [WIDTH:0] bfly_out_re, bfly_out_im;
+  logic signed [WIDTH:0] bfly_sum_re, bfly_sum_im;
+  logic signed [WIDTH:0] bfly_diff_re, bfly_diff_im;
   logic twiddle_valid;
 
   // DUT
@@ -122,8 +126,10 @@ module tb_bfly;
     .din_im(din_im),
     .shift_data_re(shift_data_re),
     .shift_data_im(shift_data_im),
-    .bfly_out_re(bfly_out_re),
-    .bfly_out_im(bfly_out_im),
+    .bfly_sum_re(bfly_sum_re),
+    .bfly_sum_im(bfly_sum_im),
+    .bfly_diff_re(bfly_diff_re),
+    .bfly_diff_im(bfly_diff_im),
     .twiddle_valid(twiddle_valid)
   );
 
