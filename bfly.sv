@@ -24,25 +24,7 @@ module bfly #(
     state_t state, next_state;
 
     logic [$clog2(NUM_PAIR)-1:0] count;
-
-    // 입력 한 클럭 지연시킴
-    logic signed [WIDTH-1:0] din_re_r, din_im_r;
-    logic signed [WIDTH-1:0] shift_data_re_r, shift_data_im_r;
-
-    always_ff @(posedge clk or negedge rstn) begin
-        if (!rstn) begin
-            din_re_r        <= 0;
-            din_im_r        <= 0;
-            shift_data_re_r <= 0;
-            shift_data_im_r <= 0;
-        end else begin
-            din_re_r        <= din_re;
-            din_im_r        <= din_im;
-            shift_data_re_r <= shift_data_re;
-            shift_data_im_r <= shift_data_im;
-        end
-    end
-
+    
     // FSM 상태 전이
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn)
