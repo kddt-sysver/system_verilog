@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
 
 module shift_reg #(
-    parameter int DATA_WIDTH = 9,
-    parameter int DEPTH = 256
+    parameter int DATA_WIDTH = 9,     // 입력 데이터 포맷 예: <3.6>
+    parameter int MEM_DEPTH  = 128    // 저장소 깊이: 256, 128, 64 등
 ) (
     input  logic clk,
     input  logic rstn,
@@ -16,55 +16,52 @@ module shift_reg #(
     output logic                         bfly_valid
 );
 
-    localparam int FIRST_VALID_COUNT = DEPTH;
-    localparam int STEP_VALID_COUNT  = DEPTH / 2;
+    localparam int TOTAL_INPUTS = 512;
 
-    // 내부 저장소
-    logic signed [DATA_WIDTH-1:0] shift_mem_re[0:DEPTH-1];
-    logic signed [DATA_WIDTH-1:0] shift_mem_im[0:DEPTH-1];
+    // 내부 메모리
+    logic signed [DATA_WIDTH-1:0] shift_mem_re[0:MEM_DEPTH-1];
+    logic signed [DATA_WIDTH-1:0] shift_mem_im[0:MEM_DEPTH-1];
 
-    // valid 제어용 카운터
-    logic [8:0] cnt;
-    logic       first_done;
+    // 입력 개수 카운트
+    logic [$clog2(TOTAL_INPUTS + 1) - 1:0] input_count;
 
+    // 저장/출력 phase 제어 (0: 저장만, 1: 출력+저장)
+    logic phase_select;
+
+    // 카운터 인스턴스
+    counter #(
+        .WIDTH($clog2(MEM_DEPTH + 1))
+    ) u_counter (
+        .clk(clk),
+        .rstn(rstn),
+        .en(valid),
+        .count_out(count)
+    );
+
+    // phase_select 제어: MEM_DEPTH 클럭마다 toggle
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
-            cnt        <= 0;
-            bfly_valid <= 0;
-            first_done <= 0;
-        end else if (valid) begin
-            if (!first_done) begin
-                if (cnt + 16 >= FIRST_VALID_COUNT) begin
-                    bfly_valid <= 1;
-                    cnt <= 0;
-                    first_done <= 1;
-                end else begin
-                    cnt <= cnt + 16;
-                    bfly_valid <= 0;
-                end
-            end else begin
-                if (cnt + 16 >= STEP_VALID_COUNT) begin
-                    bfly_valid <= 1;
-                    cnt <= 0;
-                end else begin
-                    cnt <= cnt + 16;
-                    bfly_valid <= 0;
-                end
-            end
-        end else begin
-            bfly_valid <= 0;
+            input_count  <= 0;
+            phase_select <= 1;
+        end else if (valid && input_count < TOTAL_INPUTS) begin
+            input_count <= input_count + 16;
+            if (!(count % (MEM_DEPTH / 16)))
+                phase_select <= ~phase_select;
         end
     end
 
-    // 쉬프트 동작
+    // butterfly valid: 출력 phase + valid 시점
+    assign bfly_valid = (phase_select == 1) && valid;
+
+    // 쉬프트 레지스터 동작
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
-            for (int i = 0; i < DEPTH; i++) begin
+            for (int i = 0; i < MEM_DEPTH; i++) begin
                 shift_mem_re[i] <= '0;
                 shift_mem_im[i] <= '0;
             end
         end else if (valid) begin
-            for (int i = DEPTH - 1; i >= 16; i--) begin
+            for (int i = MEM_DEPTH - 1; i >= 16; i--) begin
                 shift_mem_re[i] <= shift_mem_re[i - 16];
                 shift_mem_im[i] <= shift_mem_im[i - 16];
             end
@@ -75,12 +72,12 @@ module shift_reg #(
         end
     end
 
-    // 항상 마지막 16개를 출력
+    // 출력: 가장 오래된 16개를 고정된 위치에서 뽑아줌
     generate
         genvar k;
         for (k = 0; k < 16; k++) begin
-            assign shift_data_re[k] = shift_mem_re[DEPTH - 16 + k];
-            assign shift_data_im[k] = shift_mem_im[DEPTH - 16 + k];
+            assign shift_data_re[k] = shift_mem_re[MEM_DEPTH - 16 + k];
+            assign shift_data_im[k] = shift_mem_im[MEM_DEPTH - 16 + k];
         end
     endgenerate
 
