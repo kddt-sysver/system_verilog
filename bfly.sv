@@ -14,8 +14,10 @@ module bfly #(
     input  logic signed [WIDTH-1:0] shift_data_re,
     input  logic signed [WIDTH-1:0] shift_data_im,
 
-    output logic signed [WIDTH:0] bfly_out_re,
-    output logic signed [WIDTH:0] bfly_out_im,
+    output logic signed [WIDTH:0] bfly_sum_re,
+    output logic signed [WIDTH:0] bfly_sum_im,
+    output logic signed [WIDTH:0] bfly_diff_re,
+    output logic signed [WIDTH:0] bfly_diff_im,
 
     output logic twiddle_valid
 );
@@ -24,7 +26,7 @@ module bfly #(
     state_t state, next_state;
 
     logic [$clog2(NUM_PAIR)-1:0] count;
-    
+
     // FSM 상태 전이
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn)
@@ -56,24 +58,37 @@ module bfly #(
     end
 
     // 출력 계산 (SUM / DIFF) - signed로 부호 확장
+    // SUM 연산 결과
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
-            bfly_out_re <= 0;
-            bfly_out_im <= 0;
+            bfly_sum_re <= 0;
+            bfly_sum_im <= 0;
         end else if (state == SUM && bfly_valid) begin
-            bfly_out_re <= $signed(shift_data_re) + $signed(din_re);
-            bfly_out_im <= $signed(shift_data_im) + $signed(din_im);
-        end else if (state == DIFF && bfly_valid) begin
-            bfly_out_re <= $signed(shift_data_re) - $signed(din_re);
-            bfly_out_im <= $signed(shift_data_im) - $signed(din_im);
+            bfly_sum_re <= $signed(shift_data_re) + $signed(din_re);
+            bfly_sum_im <= $signed(shift_data_im) + $signed(din_im);
         end else begin
-            bfly_out_re <= 0;
-            bfly_out_im <= 0;
+            bfly_sum_re <= 0;
+            bfly_sum_im <= 0;
+        end
+    end
+    
+    // DIFF 연산 결과
+    always_ff @(posedge clk or negedge rstn) begin
+        if (!rstn) begin
+            bfly_diff_re <= 0;
+            bfly_diff_im <= 0;
+        end else if (state == DIFF && bfly_valid) begin
+            bfly_diff_re <= $signed(shift_data_re) - $signed(din_re);
+            bfly_diff_im <= $signed(shift_data_im) - $signed(din_im);
+        end else begin
+            bfly_diff_re <= 0;
+            bfly_diff_im <= 0;
         end
     end
 
     // twiddle_valid (DIFF 완료 후 1클럭 지연 출력)
     logic twiddle_valid_d;
+
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
             twiddle_valid_d <= 1'b0;
@@ -85,3 +100,4 @@ module bfly #(
     end
 
 endmodule
+
