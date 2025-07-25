@@ -2,18 +2,20 @@
 
 module tb_shift_reg;
 
-    parameter int WIDTH      = 9;
-    parameter int MEM_DEPTH  = 256;
+    parameter WIDTH = 9;
+    parameter MEM_DEPTH = 256;
 
-    logic clk, rstn, valid;
+    logic clk;
+    logic rstn;
+    logic valid;
+
     logic signed [WIDTH-1:0] din_re[0:15];
     logic signed [WIDTH-1:0] din_im[0:15];
 
     logic signed [WIDTH-1:0] shift_data_re[0:15];
     logic signed [WIDTH-1:0] shift_data_im[0:15];
-    logic                    bfly_valid;
 
-    // DUT
+    // DUT instantiation
     shift_reg #(
         .WIDTH(WIDTH),
         .MEM_DEPTH(MEM_DEPTH)
@@ -24,38 +26,44 @@ module tb_shift_reg;
         .din_im(din_im),
         .valid(valid),
         .shift_data_re(shift_data_re),
-        .shift_data_im(shift_data_im),
-        .bfly_valid(bfly_valid)
+        .shift_data_im(shift_data_im)
     );
 
-    // Clock generation: 10ns period (100MHz)
+    // Clock generation
     always #5 clk = ~clk;
 
+    // Test stimulus
     initial begin
-        clk   = 0;
-        rstn  = 0;
+        integer i, j;
+        clk = 0;
+        rstn = 0;
         valid = 0;
 
-        // === Reset 20ns ===
-        #20;
+        for (j = 0; j < 16; j++) begin
+            din_re[j] = 0;
+            din_im[j] = 0;
+        end
+
+        #12;
         rstn = 1;
 
-        // === rst 해제 후 3클럭 기다림 ===
-        repeat (3) @(posedge clk);
-
-        // === valid 32클럭 ON ===
-        valid = 1;
-        for (int k = 0; k < 32; k++) begin
-            for (int i = 0; i < 16; i++) begin
-                din_re[i] = (k * 16 + i) % 64;  // <3.6> 범위 (0~63)
-                din_im[i] = 0;
-            end
+        // 32번 반복 (총 512개 입력 = 16개 x 32클럭)
+        for (i = 0; i < 32; i++) begin
             @(posedge clk);
+            valid = 1;
+            for (j = 0; j < 16; j++) begin
+                din_re[j] = i*16 + j;              // 예: 0, 1, 2, ..., 511
+                din_im[j] = -(i*16 + j);           // 예: 0, -1, -2, ..., -511
+            end
         end
+
+        // 입력 멈춤
+        @(posedge clk);
         valid = 0;
 
-        // === 출력 확인 대기 ===
-        repeat (100) @(posedge clk);
+        // 이후 1~2클럭 동안 출력 유지 확인
+        repeat (5) @(posedge clk);
+
         $finish;
     end
 
