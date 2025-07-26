@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module twd_mul00 #(
     parameter int WIDTH = 9,
     CLK_CNT = 4
@@ -19,7 +21,7 @@ module twd_mul00 #(
     logic [3:0] twd_00_idx;
 
     counter #(
-        .WIDTH(CLK_CNT)
+        .COUNT_MAX_VAL(CLK_CNT)
     ) U_TWD_01_CNT (
         .clk      (clk),
         .rstn     (rstn),
