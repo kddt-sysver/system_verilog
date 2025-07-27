@@ -75,7 +75,7 @@ module module_01 #(
 
     counter_v2 #(
         .COUNT_MAX_VAL(32),
-        .DIV_RATIO(16)
+        .DIV_RATIO(8)
     ) U_BFLY_VALID_CNT (
         .clk(clk),
         .rstn(rstn),
