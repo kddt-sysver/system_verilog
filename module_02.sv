@@ -13,10 +13,10 @@ module module_02 #(
 
 
 
-    output logic signed [WIDTH+10:0] twd_02bfly_sum_re [0:15],
-    output logic signed [WIDTH+10:0] twd_02bfly_sum_im [0:15],
-    output logic signed [WIDTH+10:0] twd_02bfly_diff_re[0:15],
-    output logic signed [WIDTH+10:0] twd_02bfly_diff_im[0:15],
+    output logic signed [WIDTH+10:0] twd_02_sum_re [0:15],
+    output logic signed [WIDTH+10:0] twd_02_sum_im [0:15],
+    output logic signed [WIDTH+10:0] twd_02_diff_re[0:15],
+    output logic signed [WIDTH+10:0] twd_02_diff_im[0:15],
 
     output logic CBFP_valid
 );
@@ -36,7 +36,7 @@ module module_02 #(
     logic signed [WIDTH-1:0] w_twd_01_diff_im[0:15];
 
 
-    //logic w_twd02_valid;
+    logic w_twd02_valid;
     logic [3:0] w_bfly02_valid_cnt;
     logic w_shift_valid;
 
@@ -115,7 +115,7 @@ module module_02 #(
         .bfly_sum_im  (w_02bfly_sum_im),
         .bfly_diff_re (w_02bfly_diff_re),
         .bfly_diff_im (w_02bfly_diff_im),
-        .twiddle_valid()
+        .twiddle_valid(w_twd02_valid)
     );
 
     //-------------------------------------twiddle_02 start-------------------------------------
@@ -142,7 +142,7 @@ module module_02 #(
     ) U_TWD_02_CNT (
         .clk      (clk),
         .rstn     (rstn),
-        .en       (din_valid),  //twd00_valid            
+        .en       (w_twd02_valid),           
         .count_out(twd_02_cnt)
     );
 
@@ -168,10 +168,10 @@ module module_02 #(
         if (!rstn) begin
             // 리셋 시 출력 모두 0
             for (i = 0; i < 16; i++) begin
-                twd_02bfly_sum_re[i]  <= '0;
-                twd_02bfly_sum_im[i]  <= '0;
-                twd_02bfly_diff_re[i] <= '0;
-                twd_02bfly_diff_im[i] <= '0;
+                twd_02_sum_re[i]  <= '0;
+                twd_02_sum_im[i]  <= '0;
+                twd_02_diff_re[i] <= '0;
+                twd_02_diff_im[i] <= '0;
 
                 // 중간 레지스터들도 리셋
                 ac_02prod_sum_reg[i]  <= '0;
@@ -183,7 +183,7 @@ module module_02 #(
                 ad_02prod_diff_reg[i] <= '0;
                 bc_02prod_diff_reg[i] <= '0;
             end
-        end else if (din_valid) begin  //twd01_valid
+        end else if (w_twd02_valid) begin  //twd01_valid
             //(a+bj)*(c+dj) = ac-bd+(ad+bc)j
             for (int i = 0; i < 16; i++) begin
                 ac_02prod_sum_reg[i] <= w_02bfly_sum_re[i] * twd_02_sum_re_fac[i];
@@ -192,9 +192,9 @@ module module_02 #(
                 bc_02prod_sum_reg[i] <= w_02bfly_sum_im[i] * twd_02_sum_re_fac[i];
 
                 // 실수부: (ac_prod_sum_reg[i] - bd_prod_sum_reg[i])
-                twd_02bfly_sum_re[i] <= (ac_02prod_sum_reg[i] - bd_02prod_sum_reg[i] ); // <9.13> -> <10.13>
+                twd_02_sum_re[i] <= (ac_02prod_sum_reg[i] - bd_02prod_sum_reg[i] ); // <9.13> -> <10.13>
                 // 허수부: (ad_prod_sum_reg[i] + bc_prod_sum_reg[i])
-                twd_02bfly_sum_im[i] <= (ad_02prod_sum_reg[i] + bc_02prod_sum_reg[i] ); // <9.13> -> <10.13>
+                twd_02_sum_im[i] <= (ad_02prod_sum_reg[i] + bc_02prod_sum_reg[i] ); // <9.13> -> <10.13>
 
                 // --- 'diff' 브랜치 복소수 곱셈 처리 ---
                 // 입력: w_01bfly_diff_re[i] (A), w_01bfly_diff_im[i] (B)
@@ -205,9 +205,9 @@ module module_02 #(
                 bc_02prod_diff_reg[i] <= w_02bfly_diff_im[i] * twd_02_diff_re_fac[i];
 
                 // 실수부: (ac_prod_diff_reg[i] - bd_prod_diff_reg[i])
-                twd_02bfly_diff_re[i] <= (ac_02prod_diff_reg[i] - bd_02prod_diff_reg[i]); // <9.13> -> <10.13>
+                twd_02_diff_re[i] <= (ac_02prod_diff_reg[i] - bd_02prod_diff_reg[i]); // <9.13> -> <10.13>
                 // 허수부: (ad_prod_diff_reg[i] + bc_prod_diff_reg[i])
-                twd_02bfly_diff_im[i] <= (ad_02prod_diff_reg[i] + bc_02prod_diff_reg[i]); // <9.13> -> <10.13>
+                twd_02_diff_im[i] <= (ad_02prod_diff_reg[i] + bc_02prod_diff_reg[i]); // <9.13> -> <10.13>
             end
         end
     end
