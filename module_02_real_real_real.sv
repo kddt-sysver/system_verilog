@@ -100,8 +100,7 @@ module module_02 #(
     );
 
     bfly #(
-        .WIDTH(WIDTH),
-        .NUM_PAIR(64)  // 16쌍 × N 클럭
+        .WIDTH(WIDTH)
     ) U_BFLY02 (
         .clk          (clk),
         .rstn         (rstn),
