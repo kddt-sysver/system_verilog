@@ -37,9 +37,12 @@ module module_02 #(
 
 
     logic w_twd02_valid;
-    logic [3:0] w_bfly02_valid_cnt;
+    logic w_bfly02_valid;
     logic w_shift_valid;
     logic [3:0] w_cnt;
+
+    assign twd_data02_re = (w_cnt < 8) ? twd_01_sum_re : w_twd_01_diff_re;
+    assign twd_data02_im = (w_cnt < 8) ? twd_01_sum_im : w_twd_01_diff_im;
 
     counter_v3 #(
         .PULSE_CYCLES(32)
@@ -73,11 +76,6 @@ module module_02 #(
         .count_out(w_cnt)
     );
 
-    assign twd_data02_re = (w_cnt < 8) ? twd_01_sum_re : w_twd_01_diff_re;
-    assign twd_data02_im = (w_cnt < 8) ? twd_01_sum_im : w_twd_01_diff_im;
-
-
-
     shift_reg #(
         .WIDTH(WIDTH),
         .MEM_DEPTH(64)  // 예: 256, 128, 64 등 단계에 따라 설정
@@ -92,13 +90,13 @@ module module_02 #(
     );
 
     counter_v2 #(
-        .COUNT_MAX_VAL(8),
+        .COUNT_MAX_VAL(32),
         .DIV_RATIO(4)
     ) U_BFLY_CNT (
         .clk(clk),
         .rstn(rstn),
         .en(shift_02_valid),
-        .out_pulse(w_bfly02_valid_cnt)
+        .out_pulse(w_bfly02_valid)
     );
 
     bfly #(
@@ -107,7 +105,7 @@ module module_02 #(
     ) U_BFLY02 (
         .clk          (clk),
         .rstn         (rstn),
-        .bfly_valid   (w_bfly02_valid_cnt),  // 연산 시 HIGH
+        .bfly_valid   (w_bfly02_valid),     // 연산 시 HIGH
         .din_re       (twd_data02_re),
         .din_im       (twd_data02_im),
         .shift_data_re(w_shift_data02_re),
@@ -149,16 +147,16 @@ module module_02 #(
 
     //genvar j;
     for (j = 0; j < 16; j++) begin
-        assign twf0_sum_idx[j] = j + 128 * (twd_02_cnt / 4);
-        twd0_512 U_TWF0_512 (
+        assign twf0_sum_idx[j] = j + 128 * (twd_02_cnt >> 2);
+        twd0_512 U_TWF0_512_sum (
             .rom_address_in(twf0_sum_idx[j]),  // 0에서 511까지의 단일 인덱스 입력
             .twf_re_out(twd_02_sum_re_fac[j]),
             .twf_im_out(twd_02_sum_im_fac[j])
         );
     end
     for (j = 0; j < 16; j++) begin
-        assign twf0_diff_idx[j] = j + 128 * (twd_02_cnt / 4) + 64;
-        twd0_512 U_TWF0_512 (
+        assign twf0_diff_idx[j] = j + 128 * (twd_02_cnt >> 2) + 64;
+        twd0_512 U_TWF0_512_diff (
             .rom_address_in(twf0_diff_idx[j]),  // 0에서 511까지의 단일 인덱스 입력
             .twf_re_out(twd_02_diff_re_fac[j]),
             .twf_im_out(twd_02_diff_im_fac[j])
@@ -212,5 +210,7 @@ module module_02 #(
             end
         end
     end
+
+
     //-------------------------------------twiddle_02 end---------------------------------------
 endmodule
