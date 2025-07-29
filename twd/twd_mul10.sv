@@ -28,7 +28,7 @@ module twd_mul10 #(
         .en       (twd10_valid),           
         .count_out(twd_10_cnt)
     );
-    assign twd_10_idx = twd_10_cnt
+    assign twd_10_idx = twd_10_cnt;
 
     always @(*) begin
         case (twd_10_idx)
