@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module module_02 #(
     parameter int WIDTH = 13
 ) (
