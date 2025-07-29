@@ -2,7 +2,7 @@
 
 module twd_mul10 #(
     parameter int WIDTH = 12,
-    parameter int CLK_CNT = 16
+    parameter int CLK_CNT = 4
 ) (
     input logic clk,
     input logic rstn,
