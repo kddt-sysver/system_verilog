@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module twd0_512 (
     input logic [8:0] rom_address_in, // 0에서 511까지의 단일 인덱스 입력
     output logic signed [8:0] twf_re_out,
